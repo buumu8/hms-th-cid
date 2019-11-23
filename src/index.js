@@ -2,7 +2,7 @@ const { app, BrowserWindow } = require('electron');
 
 if (require('electron-squirrel-startup')) return app.quit();
 
-const serverIP = 'http://192.168.2.250:3000';
+const serverIP = 'http://127.0.0.1:3000';
 var request = require('request');
 
 const smartcard = require('smartcard');
@@ -88,6 +88,7 @@ devices.on('device-activated', event => {
     const currentDevices = event.devices;
     let device = event.device;
     console.log(`Device '${device}' activated, devices: ${currentDevices}`);
+
     for (let prop in currentDevices) {
         console.log("Devices: " + currentDevices[prop]);
     }
@@ -95,7 +96,7 @@ devices.on('device-activated', event => {
     device.on('card-inserted', event => {
         let card = event.card;
         console.log(`Card '${card.getAtr()}' inserted into '${event.device}'`);
-        mainWindow.webContents.send(`Card '${card.getAtr()}' inserted into '${event.device}'`);
+        mainWindow.webContents.send('status',`Card '${card.getAtr()}' inserted into '${event.device}'`);
 
         card.on('command-issued', event => {
             console.log(`Command '${event.command}' issued to '${event.card}' `);
@@ -119,6 +120,7 @@ devices.on('device-activated', event => {
             .issueCommand(new CommandApdu(new CommandApdu({ bytes: [0x00, 0xA4, 0x04, 0x00, 0x08, 0xA0, 0x00, 0x00, 0x00, 0x54, 0x48, 0x00, 0x01] })))
             .then((response) => {
                 console.log(response);
+
            //     readImageOneLine(card);
            readData(card) ;
 
@@ -130,7 +132,7 @@ devices.on('device-activated', event => {
     });
     device.on('card-removed', event => {
         console.log(`Card removed from '${event.name}' `);
-        mainWindow.webContents.send('status',`กรุณาเสียบบัตรประชาชนและรอให้ไฟสีเหลืองติด`);
+        mainWindow.webContents.send('status',`เครื่องอ่านบัตร พร้อมใช้งาน กรุณาเสียบบัตร`);
     });
 
 });
@@ -255,6 +257,7 @@ function readNameTH(card) {
 function addGuest () {
   if(nameTH, nameEN, address, cid){
     console.log('contacting server');
+    mainWindow.webContents.send('status',`กำลังติดต่อเซอร์เวอร์...`);
     request(
       { method: 'POST'
         , uri: serverIP + '/addguest'
@@ -273,8 +276,9 @@ function addGuest () {
         console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
         console.log('body:', body); // Print the HTML for the Google homepage.
         if(response){
-           mainWindow.webContents.send('status',`กำลังอ่านข้อมูลบัตร<br>หมายเลขบัตรประชาชน: ${cid}<br>ชื่อภาษาไทย: ${nameTH}<br>ชื่อภาษาอังกฤษ: ${nameEN}<br>ที่อยู่: ${address}<br>สถานะ: ${body}`);
-        } else if(error){
+           mainWindow.webContents.send('status',`กำลังอ่านข้อมูลบัตร...<br>หมายเลขบัตรประชาชน: ${cid}<br>ชื่อภาษาไทย: ${nameTH}<br>ชื่อภาษาอังกฤษ: ${nameEN}<br>ที่อยู่: ${address}<br>สถานะ: ${body}`);
+        } 
+        if(error){
            mainWindow.webContents.send('status',`อ่านข้อมูลไม่สำเร็จ: ${body,error}`);
         }
       });
