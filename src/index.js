@@ -279,9 +279,9 @@ function addGuest () {
               tel: '1',
               address: address,
               nationality: 'THA'
-              })
-        },
-        {timeout: 1}
+              }),
+          timeout: 1500
+        }
       , function (error, response, body) {
         console.log('error:', error); // Print the error if one occurred
         console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
@@ -293,7 +293,7 @@ function addGuest () {
             if(error.code === 'ETIMEDOUT'){
               mainWindow.webContents.send('status','ติดต่อเซอร์เวอร์ไม่สำเร็จ กรุณาตรวจสอบ')
             } else {
-              mainWindow.webContents.send('status',`อ่านข้อมูลไม่สำเร็จ: ${body,error}`);
+              mainWindow.webContents.send('status',`บันทึกข้อมูลผู้เข้าพักไม่สำเร็จ: ${body,error}`);
             }
         }
       });
