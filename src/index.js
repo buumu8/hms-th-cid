@@ -2,7 +2,7 @@ const { app, BrowserWindow } = require('electron');
 
 if (require('electron-squirrel-startup')) return app.quit();
 
-const serverIP = 'http://127.0.0.1:3000';
+const serverIP = 'http://192.168.2.250:3000';
 var request = require('request');
 
 const smartcard = require('smartcard');
@@ -100,7 +100,7 @@ devices.on('device-activated', event => {
 
         card.on('command-issued', event => {
             console.log(`Command '${event.command}' issued to '${event.card}' `);
-            mainWindow.webContents.send(`Command '${event.command}' issued to '${event.card}' `);
+            mainWindow.webContents.send('status',`Command '${event.command}' issued to '${event.card}' `);
         });
 
         card.on('response-received', event => {
@@ -125,7 +125,9 @@ devices.on('device-activated', event => {
            readData(card) ;
 
             }).catch((error) => {
-                console.error(error);
+                // console.error(error);
+                console.log('card reading: error'+error);
+                mainWindow.webContents.send('status','เครื่องอ่านบัตรมีปัญหา กรุณารอสักครู่ แล้วเสียบบัตรใหม่อีกครั้ง')
             });
 
 
@@ -150,7 +152,7 @@ function readData(card) {
     card
         .issueCommand((new CommandApdu({ bytes: [0x80, 0xb0, 0x00, 0x04, 0x02, 0x00, 0x0d] })))
         .then((response) => {
-            mainWindow.webContents.send('status',`readCid '${response.toString('hex')}`);
+           console.log(`readCid '${response.toString('hex')}`);
 
             card
                 .issueCommand((new CommandApdu({ bytes: [0x00, 0xc0, 0x00, 0x00, 0x0d] })))
@@ -168,7 +170,9 @@ function readData(card) {
                     cid = buffer.replace(/ /gi,'').replace('�','').replace("\u0000", "");
                    readAddress(card);
                 }).catch((error) => {
-                    console.error(error);
+                    // console.error(error);
+                    console.log('errer: reading cid'+error);
+                    mainWindow.webContents.send('status','เครื่องอ่านบัตรมีปัญหา กรุณารอสักครู่ แล้วเสียบบัตรใหม่อีกครั้ง')
                 });
 
 
@@ -193,7 +197,9 @@ function readAddress(card) {
                     address = buffer.replace('�','').replace("\u0000", "");
                     readNameEN(card);
                 }).catch((error) => {
-                    console.error(error);
+                   // console.error(error);
+                    console.log('errer: reading address'+error);
+                    mainWindow.webContents.send('status','เครื่องอ่านบัตรมีปัญหา กรุณารอสักครู่ แล้วเสียบบัตรใหม่อีกครั้ง')
                 });
 
 
@@ -219,7 +225,9 @@ function readNameEN(card) {
                     // readImageOneLine(card);
                     readNameTH(card);
                 }).catch((error) => {
-                    console.error(error);
+                    // console.error(error);
+                    console.log('errer: reading nameEN'+error);
+                    mainWindow.webContents.send('status','เครื่องอ่านบัตรมีปัญหา กรุณารอสักครู่ แล้วเสียบบัตรใหม่อีกครั้ง')
                 });
 
 
@@ -244,7 +252,9 @@ function readNameTH(card) {
                     nameTH = buffer.replace('�','').replace("\u0000", "");
                     addGuest();
                 }).catch((error) => {
-                    console.error(error);
+                    // console.error(error);
+                    console.log('errer: reading nameTH'+error);
+                    mainWindow.webContents.send('status','เครื่องอ่านบัตรมีปัญหา กรุณารอสักครู่ แล้วเสียบบัตรใหม่อีกครั้ง')
                 });
 
 
@@ -270,7 +280,8 @@ function addGuest () {
               address: address,
               nationality: 'THA'
               })
-        }
+        },
+        {timeout: 1}
       , function (error, response, body) {
         console.log('error:', error); // Print the error if one occurred
         console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
@@ -279,7 +290,11 @@ function addGuest () {
            mainWindow.webContents.send('status',`กำลังอ่านข้อมูลบัตร...<br>หมายเลขบัตรประชาชน: ${cid}<br>ชื่อภาษาไทย: ${nameTH}<br>ชื่อภาษาอังกฤษ: ${nameEN}<br>ที่อยู่: ${address}<br>สถานะ: ${body}`);
         } 
         if(error){
-           mainWindow.webContents.send('status',`อ่านข้อมูลไม่สำเร็จ: ${body,error}`);
+            if(error.code === 'ETIMEDOUT'){
+              mainWindow.webContents.send('status','ติดต่อเซอร์เวอร์ไม่สำเร็จ กรุณาตรวจสอบ')
+            } else {
+              mainWindow.webContents.send('status',`อ่านข้อมูลไม่สำเร็จ: ${body,error}`);
+            }
         }
       });
   }
